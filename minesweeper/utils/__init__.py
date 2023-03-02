@@ -2,6 +2,7 @@ import ctypes
 import cv2
 import numpy as np
 import pyautogui
+import utils.utilsModule
 
 
 def get_window_rect_from_name(name: str):
@@ -40,6 +41,7 @@ def click(coords: list[tuple[int, int]]):
         pyautogui.moveTo(x1+(x*24)+12, y1+(y*24)+12)
         pyautogui.click()
 
+
 def right_click(coords: list[tuple[int, int]]):
     rect = get_window_rect_from_name('Minesweeper')
     x1, y1 = rect.left+23, rect.top+152
@@ -53,3 +55,10 @@ def distance(A: tuple[int, int], B: tuple[int, int]):
     pointB = np.array(B)
     sum_sq = np.sum(np.square(pointA - pointB))
     return np.sqrt(sum_sq)
+
+
+def possible_bombs(width: int,  height: int,
+                   board: list[tuple[int, int]],
+                   guess_tiles: list[tuple[int, int]],
+                   number_tiles: list[tuple[int, int]]) -> list[float]:
+    return utilsModule._possible_bombs(width,  height, board,  guess_tiles,  number_tiles)

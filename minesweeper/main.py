@@ -145,7 +145,6 @@ class AI(Reader):
     def number_tiles(self) -> list[tuple[int, int]]:
         if self._number_tiles:
             return self._number_tiles
-        self.read_tiles()
         lst = []
         for j in range(self.height):
             for i in range(self.width):
@@ -158,7 +157,6 @@ class AI(Reader):
     def guess_tiles(self) -> list[tuple[int, int]]:
         if self._guess_tiles:
             return self._guess_tiles
-        self.read_tiles()
         lst = []
         for j in range(self.height):
             for i in range(self.width):
@@ -170,7 +168,9 @@ class AI(Reader):
 
     @property
     def possible_bombs(self) -> np.ndarray:
-        self.clear_properties()
+        result = possible_bombs(self.width, self.height,
+                                self.board, self.guess_tiles, self.number_tiles)
+        return np.array(result)
         lst = []
         bombs = [None]*len(self.guess_tiles)
         used_bombs = [[] for _ in range(len(self.guess_tiles))]
@@ -219,23 +219,24 @@ class AI(Reader):
         if not self.number_tiles:
             click([(random.randint(0, self.width-1),
                     random.randint(0, self.height-1))])
-            self.clear_properties()
+        self.read_tiles()
+        self.clear_properties()
+        possible_bombs = self.possible_bombs
+        # flags
+        # coords = []
+        # for i in np.where(possible_bombs == 1)[0]:
+        #     coords.append(self.guess_tiles[i])
+        # right_click(coords)
+        # empty
+        if 0 in possible_bombs:
+            coords = []
+            for i in np.where(possible_bombs == 0)[0]:
+                coords.append(self.guess_tiles[i])
+            click(coords)
         else:
-            possible_bombs = self.possible_bombs.copy()
-            print(possible_bombs)
-            if 1 in possible_bombs:
-                coords = []
-                for i in np.where(possible_bombs == 1)[0]:
-                    coords.append(self.guess_tiles[i])
-                right_click(coords)
-            if 0 in possible_bombs:
-                coords = []
-                for i in np.where(possible_bombs == 0)[0]:
-                    coords.append(self.guess_tiles[i])
-                click(coords)
-            else:
-                i = np.argmin(possible_bombs)
-                click([self.guess_tiles[i]])
+            i = np.argmin(possible_bombs)
+            print(possible_bombs[i])
+            click([self.guess_tiles[i]])
 
     def print_guess(self, include_spaces: bool = True) -> None:
         text = ''
@@ -261,7 +262,7 @@ class AI(Reader):
 
 
 if __name__ == '__main__':
-    pyautogui.PAUSE = 0.0001
+    pyautogui.PAUSE = 0.00001
     while True:
         question = input()
         if question in ['q', 'Q']:
@@ -272,10 +273,10 @@ if __name__ == '__main__':
             pyautogui.hotkey('alt', 'tab')
             time.sleep(0.5)
             while True:
-                ai.print_tiles(include_spaces=False)
+                # ai.print_tiles(include_spaces=False)
                 ai.choose_and_click()
                 if any(9 in tile for tile in ai.board):
                     print('BOMB!')
                     break
-        except IndexError:
-            print('IndexError')
+        except ValueError as e:
+            print(e)
