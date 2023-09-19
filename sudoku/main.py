@@ -4,6 +4,9 @@ from enum import IntEnum
 from dataclasses import dataclass
 from time import sleep, time
 from typing import Any
+import colorama
+
+colorama.init()
 
 
 @dataclass
@@ -146,7 +149,8 @@ class Sudoku():
         text += ' ' * space_width + ' -----------------------\n'
         text = text[:-1]
         text += '\n' * space_height
-        return text
+        cursor = '\033[A' * text.count('\n')
+        return cursor + text
 
     def posibble_number(self, x: int, y: int):
         if self.board[y][x] != 0:
@@ -243,7 +247,8 @@ class BoardMaker():
         text += ' ' * space_width + ' -----------------------\n'
         text = text[:-1]
         text += '\n' * space_height
-        return text
+        cursor = '\033[A' * text.count('\n')
+        return cursor + text
 
     def maker(self):
         while True:
@@ -265,7 +270,7 @@ class BoardMaker():
                     return self.board
                 case other:
                     number = other - Key.NUMBER_0
-                    if number < 1 or number > 9:
+                    if number < 0 or number > 9:
                         continue
                     self.board[self.selected.y][self.selected.x] = number
                     self.selected.x += 1
