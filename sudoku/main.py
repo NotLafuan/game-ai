@@ -1,8 +1,102 @@
 import os
-from time import sleep, time
 import msvcrt
+from enum import IntEnum
+from dataclasses import dataclass
+from time import sleep, time
+from typing import Any
 
 
+@dataclass
+class Point:
+    x: int
+    y: int
+    __slots__ = ['x', 'y', 'index']
+
+    def __iter__(self):
+        self.index = 0
+        return self
+
+    def __next__(self):
+        if self.index == 2:
+            raise StopIteration
+        if self.index == 0:
+            self.index += 1
+            return self.x
+        if self.index == 1:
+            self.index += 1
+            return self.y
+
+
+class Key(IntEnum):
+    ESC = 27
+    X_BUTTON = 255
+    SPACE = 32
+    ENTER = 13
+    NUMBER_0 = 48
+    NUMBER_1 = 49
+    NUMBER_2 = 50
+    NUMBER_3 = 51
+    NUMBER_4 = 52
+    NUMBER_5 = 53
+    NUMBER_6 = 54
+    NUMBER_7 = 55
+    NUMBER_8 = 56
+    NUMBER_9 = 57
+    A = 97
+    B = 98
+    C = 99
+    D = 100
+    E = 101
+    F = 102
+    G = 103
+    H = 104
+    I = 105
+    J = 106
+    K = 107
+    L = 108
+    M = 109
+    N = 110
+    O = 111
+    P = 112
+    Q = 113
+    R = 114
+    S = 115
+    T = 116
+    U = 117
+    V = 118
+    W = 119
+    X = 120
+    Y = 121
+    Z = 122
+    A_CAPS = 65
+    B_CAPS = 66
+    C_CAPS = 67
+    D_CAPS = 68
+    E_CAPS = 69
+    F_CAPS = 70
+    G_CAPS = 71
+    H_CAPS = 72
+    I_CAPS = 73
+    J_CAPS = 74
+    K_CAPS = 75
+    L_CAPS = 76
+    M_CAPS = 77
+    N_CAPS = 78
+    O_CAPS = 79
+    P_CAPS = 80
+    Q_CAPS = 81
+    R_CAPS = 82
+    S_CAPS = 83
+    T_CAPS = 84
+    U_CAPS = 85
+    V_CAPS = 86
+    W_CAPS = 87
+    X_CAPS = 88
+    Y_CAPS = 89
+    Z_CAPS = 90
+
+
+@dataclass
 class Sudoku():
     board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -19,18 +113,18 @@ class Sudoku():
     def __init__(self):
         self.empty_poses = self.empty_poses_func()
 
-    def copy_board(self, board):
+    def copy_board(self, board: list[list[int]]):
         for y in range(9):
             for x in range(9):
                 self.board[y][x] = board[y][x]
         self.empty_poses = self.empty_poses_func()
 
-    def empty_poses_func(self):
+    def empty_poses_func(self) -> list[Point]:
         poses = []
         for y, row in enumerate(self.board):
             for x, item in enumerate(row):
                 if item == 0:
-                    poses.append((x, y))
+                    poses.append(Point(x, y))
         return poses
 
     def __str__(self):
@@ -88,17 +182,18 @@ class Sudoku():
         self.board[y][x] = 0
 
 
+@dataclass
 class AI():
     used_number = [[[] for _ in range(9)] for _ in range(9)]
 
-    def solve(self, sudoku, print_progress=False, slowmode=False, slowmode_delay=0.1):
+    def solve(self, sudoku: Sudoku, print_progress=False, slowmode=False, slowmode_delay=0.1):
         turn = 0
         while turn < len(sudoku.empty_poses):
             x, y = sudoku.empty_poses[turn]
             sudoku.clear_slot(x, y)  # clear current slot
             if not sudoku.posibble_number(x, y):
                 turn -= 1
-                break
+                continue
             # check for unused number
             number_to_use = 0
             for choice in sudoku.posibble_number(x, y):
@@ -108,9 +203,9 @@ class AI():
             if not number_to_use:
                 self.used_number[y][x] = []
                 sudoku.clear_slot(x, y)
-                turn -= 1  # go back one step
-            # test a number
+                turn -= 1
             else:
+                a = self.used_number[y][x]
                 sudoku.insert_number(x, y, number_to_use)
                 self.used_number[y][x].append(number_to_use)
                 turn += 1
@@ -124,7 +219,7 @@ class AI():
 class BoardMaker():
     def __init__(self):
         self.board = [[0 for _ in range(9)] for _ in range(9)]
-        self.selected = [0, 0]
+        self.selected = Point(0, 0)
 
     def __str__(self):
         # center on screen 25x13
@@ -140,7 +235,7 @@ class BoardMaker():
             for i, item in enumerate(row):
                 if i % 3 == 0:
                     text += '| '
-                if i == self.selected[0] and j == self.selected[1]:
+                if i == self.selected.x and j == self.selected.y:
                     text += '█ '
                 else:
                     text += f'{item} ' if item > 0 else '  '
@@ -153,71 +248,39 @@ class BoardMaker():
     def maker(self):
         while True:
             keypress = ord(msvcrt.getch()) if msvcrt.kbhit() else 0
+            while not keypress:
+                keypress = ord(msvcrt.getch()) if msvcrt.kbhit() else 0
+                continue
 
-            if not keypress:
-                break
-            # right
-            if keypress == 100 or keypress == 77:
-                self.selected[0] += 1
-            # left
-            if keypress == 97 or keypress == 75:
-                self.selected[0] -= 1
-            # up
-            if keypress == 119 or keypress == 72:
-                self.selected[1] -= 1
-            # down
-            if keypress == 115 or keypress == 80:
-                self.selected[1] += 1
-
-            # assigning the numbers
-            if keypress >= 48 and keypress <= 57:
-                # 0
-                if keypress == 48:
-                    self.board[self.selected[1]][self.selected[0]] = 0
-                # 1
-                if keypress == 49:
-                    self.board[self.selected[1]][self.selected[0]] = 1
-                # 2
-                if keypress == 50:
-                    self.board[self.selected[1]][self.selected[0]] = 2
-                # 3
-                if keypress == 51:
-                    self.board[self.selected[1]][self.selected[0]] = 3
-                # 4
-                if keypress == 52:
-                    self.board[self.selected[1]][self.selected[0]] = 4
-                # 5
-                if keypress == 53:
-                    self.board[self.selected[1]][self.selected[0]] = 5
-                # 6
-                if keypress == 54:
-                    self.board[self.selected[1]][self.selected[0]] = 6
-                # 7
-                if keypress == 55:
-                    self.board[self.selected[1]][self.selected[0]] = 7
-                # 8
-                if keypress == 56:
-                    self.board[self.selected[1]][self.selected[0]] = 8
-                # 9
-                if keypress == 57:
-                    self.board[self.selected[1]][self.selected[0]] = 9
-                self.selected[0] += 1
-                if self.selected[0] > 8:
-                    self.selected[0] = 0
-                    self.selected[1] += 1
+            match keypress:
+                case Key.W:
+                    self.selected.y -= 1
+                case Key.A:
+                    self.selected.x -= 1
+                case Key.S:
+                    self.selected.y += 1
+                case Key.D:
+                    self.selected.x += 1
+                case Key.ENTER:
+                    return self.board
+                case other:
+                    number = other - Key.NUMBER_0
+                    if number < 1 or number > 9:
+                        continue
+                    self.board[self.selected.y][self.selected.x] = number
+                    self.selected.x += 1
+                    if self.selected.x > 8:
+                        self.selected.x = 0
+                        self.selected.y += 1
 
             # x looping
-            self.selected[0] = 8 if self.selected[0] < 0 else self.selected[0]
-            self.selected[0] = 0 if self.selected[0] > 8 else self.selected[0]
+            self.selected.x = 8 if self.selected.x < 0 else self.selected.x
+            self.selected.x = 0 if self.selected.x > 8 else self.selected.x
             # y looping
-            self.selected[1] = 8 if self.selected[1] < 0 else self.selected[1]
-            self.selected[1] = 0 if self.selected[1] > 8 else self.selected[1]
+            self.selected.y = 8 if self.selected.y < 0 else self.selected.y
+            self.selected.y = 0 if self.selected.y > 8 else self.selected.y
 
-            # enter
-            if keypress == 13:
-                return self.board
-
-            print(self.__str__(), end='')
+            print(self, end='')
 
 
 if __name__ == '__main__':
